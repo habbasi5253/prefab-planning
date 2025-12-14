@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrefabFlow | AI Production Planning</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --dark-2: #374151;
+            --light: #f9fafb;
+            --gray: #9ca3af;
+            --gray-light: #e5e7eb;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* Subscription Header */
+        .subscription-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .plan-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Main Layout */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Input Wizard */
+        .wizard-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .wizard-header {
+            display: flex;
+            border-bottom: 1px solid var(--gray-light);
+            background: var(--light);
+        }
+
+        .wizard-step {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .wizard-step.active {
+            color: var(--primary);
+            background: white;
+        }
+
+        .wizard-step.completed {
+            color: var(--success);
+        }
+
+        .wizard-step::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: transparent;
+            transition: var(--transition);
+        }
+
+        .wizard-step.active::after {
+            background: var(--primary);
+        }
+
+        .wizard-step.completed::after {
+            background: var(--success);
+        }
+
+        .wizard-content {
+            padding: 2.5rem;
+        }
+
+        /* Form Elements */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-2);
+            font-size: 0.95rem;
+        }
+
+        .input-label .info {
+            color: var(--gray);
+            font-weight: 400;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-field.with-unit {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-unit {
+            padding-left: 0.5rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .range-slider {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .range-value {
+            text-align: right;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-option.selected {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--gray-light);
+            border-radius: var(--border-radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.02);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h3 {
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .upload-area p {
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+
+        /* Results Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .metric-title {
+            font-weight: 600;
+            color: var(--dark-2);
+            font-size: 0.95rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* Chart Containers */
+        .chart-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Gantt Chart */
+        .gantt-container {
+            height: 400px;
+            overflow-x: auto;
+        }
+
+        .gantt-task {
+            height: 40px;
+            margin: 10px 0;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            color: white;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .gantt-task:hover {
+            transform: translateX(5px);
+        }
+
+        .gantt-task-label {
+            position: absolute;
+            left: 1rem;
+            z-index: 2;
+            font-size: 0.875rem;
+        }
+
+        /* AI Recommendations */
+        .ai-recommendations {
+            background: linear-gradient(135deg, #f0f9ff 0%, #fef7ff 100%);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 1.5rem;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .ai-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .recommendation-item {
+            background: white;
+            border-radius: var(--border-radius-sm);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--gray-light);
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .recommendation-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-optimization {
+            background: #dbeafe;
+            color: var(--primary);
+        }
+
+        .badge-risk {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .badge-efficiency {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding: 2rem 0;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: var(--border-radius-sm);
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 1rem;
+            }
+            
+            .wizard-header {
+                flex-direction: column;
+            }
+            
+            .wizard-step {
+                padding: 1rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Subscription Header -->
+    <header class="subscription-header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-industry"></i>
+            </div>
+            <span>PrefabFlow</span>
+        </div>
+        <div class="plan-badge">
+            <i class="fas fa-crown"></i>
+            Professional Plan
+        </div>
+    </header>
+
+    <!-- Main Application -->
+    <div class="app-container">
+        <!-- Input Wizard -->
+        <div class="wizard-container">
+            <div class="wizard-header">
+                <div class="wizard-step active" data-step="1">
+                    <i class="fas fa-project-diagram"></i>
+                    Project Setup
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Capacity Planning
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <i class="fas fa-chart-line"></i>
+                    Demand Analysis
+                </div>
+                <div class="wizard-step" data-step="4">
+                    <i class="fas fa-calendar-alt"></i>
+                    Schedule Output
+                </div>
+            </div>
+
+            <!-- Step 1: Project Setup -->
+            <div class="wizard-content" id="step-1">
+                <h2 class="section-title">
+                    <i class="fas fa-project-diagram"></i>
+                    Project Details & Product Information
+                </h2>
+                
+                <div class="form-grid">
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">Project Name</label>
+                            <input type="text" class="input-field" id="projectName" placeholder="e.g., Modular Hospital Wing A" value="Residential Tower Units">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Product Type</label>
+                            <select class="input-field" id="productType">
+                                <option value="modular_walls">Modular Wall Panels</option>
+                                <option value="bathroom_pods" selected>Bathroom Pods</option>
+                                <option value="mep_racks">MEP Racks</option>
+                                <option value="kitchen_modules">Kitchen Modules</option>
+                                <option value="facade_panels">Facade Panels</option>
+                                <option value="structural_frames">Structural Frames</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Total Units Required
+                                <span class="info">(Complete production quantity)</span>
+                            </label>
+                            <input type="number" class="input-field" id="totalUnits" min="1" value="500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">Client Delivery Start Date</label>
+                            <input type="date" class="input-field" id="deliveryStart" value="2024-07-01">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Client Delivery End Date</label>
+                            <input type="date" class="input-field" id="deliveryEnd" value="2024-09-30">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Production Buffer
+                                <span class="info">(Extra time before delivery)</span>
+                            </label>
+                            <div class="toggle-group">
+                                <div class="toggle-option selected" data-buffer="5">5% Buffer</div>
+                                <div class="toggle-option" data-buffer="10">10% Buffer</div>
+                                <div class="toggle-option" data-buffer="15">15% Buffer</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Upload for Historical Data -->
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload Historical Production Data (Optional)</h3>
+                    <p>Upload CSV or Excel files to improve AI predictions with your actual production history</p>
+                    <input type="file" id="fileUpload" accept=".csv,.xlsx,.xls" style="display: none;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileUpload').click()">
+                        <i class="fas fa-upload"></i> Choose File
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Capacity Planning -->
+            <div class="wizard-content" id="step-2" style="display: none;">
+                <h2 class="section-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Production Capacity & Constraints
+                </h2>
+                
+                <div class="form-grid">
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">
+                                Standard Production Hours per Unit
+                                <span class="info">(Man-hours including setup)</span>
+                            </label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" class="input-field" id="hoursPerUnit" step="0.1" min="0.5" max="100" value="4.5">
+                                <span class="input-unit">hours</span>
+                            </div>
+                            <input type="range" class="range-slider" id="hoursSlider" min="0.5" max="100" step="0.1" value="4.5">
+                            <div class="range-value" id="hoursValue">4.5 hours</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Available Production Workers
+                                <span class="info">(Dedicated to this product line)</span>
+                            </label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" class="input-field" id="workersCount" min="1" max="200" value="18">
+                                <span class="input-unit">workers</span>
+                            </div>
+                            <input type="range" class="range-slider" id="workersSlider" min="1" max="200" value="18">
+                            <div class="range-value" id="workersValue">18 workers</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">Work Schedule</label>
+                            <select class="input-field" id="workSchedule">
+                                <option value="single_8">Single Shift (8 hours)</option>
+                                <option value="single_10" selected>Extended Shift (10 hours)</option>
+                                <option value="double_16">Double Shift (16 hours)</option>
+                                <option value="custom">Custom Schedule</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Work Days per Week
+                                <span class="info">(Production days)</span>
+                            </label>
+                            <div class="toggle-group">
+                                <div class="toggle-option selected" data-days="5">5 days</div>
+                                <div class="toggle-option" data-days="6">6 days</div>
+                                <div class="toggle-option" data-days="7">7 days</div>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Expected Efficiency Rate
+                                <span class="info">(Historical average productivity)</span>
+                            </label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" class="input-field" id="efficiencyRate" min="50" max="120" value="85">
+                                <span class="input-unit">%</span>
+                            </div>
+                            <input type="range" class="range-slider" id="efficiencySlider" min="50" max="120" value="85">
+                            <div class="range-value" id="efficiencyValue">85%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Capacity Calculator -->
+                <div class="ai-recommendations" style="margin-top: 2rem;">
+                    <div class="ai-header">
+                        <div class="ai-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 0.25rem;">Capacity Preview</h3>
+                            <p style="color: var(--gray); font-size: 0.9rem;">Estimated daily output based on your inputs</p>
+                        </div>
+                    </div>
+                    <div id="capacityPreview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Demand Analysis -->
+            <div class="wizard-content" id="step-3" style="display: none;">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Demand Curve & Delivery Schedule
+                </h2>
+                
+                <div class="form-grid">
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">Delivery Pattern</label>
+                            <select class="input-field" id="deliveryPattern">
+                                <option value="uniform">Uniform (Steady delivery)</option>
+                                <option value="front_loaded" selected>Front-loaded (More units early)</option>
+                                <option value="back_loaded">Back-loaded (Ramp up delivery)</option>
+                                <option value="custom">Custom weekly schedule</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Peak Week Requirement
+                                <span class="info">(Maximum units in any week)</span>
+                            </label>
+                            <input type="number" class="input-field" id="peakWeek" min="1" value="60">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="input-group">
+                            <label class="input-label">Material Lead Time Buffer</label>
+                            <div class="toggle-group">
+                                <div class="toggle-option" data-lead="1">1 week</div>
+                                <div class="toggle-option selected" data-lead="2">2 weeks</div>
+                                <div class="toggle-option" data-lead="3">3 weeks</div>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                Quality Control Time per Unit
+                                <span class="info">(Included in production time)</span>
+                            </label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" class="input-field" id="qcTime" step="0.1" min="0" max="10" value="0.5">
+                                <span class="input-unit">hours</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Demand Curve Visualization -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Demand vs. Capacity Analysis</h3>
+                        <div class="chart-controls">
+                            <button class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div id="demandChart" style="height: 300px;"></div>
+                </div>
+            </div>
+
+            <!-- Step 4: Schedule Output -->
+            <div class="wizard-content" id="step-4" style="display: none;">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Production Schedule & AI Recommendations
+                </h2>
+                
+                <!-- Key Metrics Dashboard -->
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Feasibility Score</span>
+                            <span class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> 92%
+                            </span>
+                        </div>
+                        <div class="metric-value" id="feasibilityScore">92%</div>
+                        <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">
+                            Based on capacity vs demand
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Required Daily Output</span>
+                            <span class="metric-trend trend-up">
+                                <i class="fas fa-chart-line"></i>
+                            </span>
+                        </div>
+                        <div class="metric-value" id="dailyOutput">5.8</div>
+                        <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">
+                            Units per day needed
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Achievable Daily Output</span>
+                            <span class="metric-trend trend-up">
+                                <i class="fas fa-check"></i> 6.4
+                            </span>
+                        </div>
+                        <div class="metric-value" id="achievableOutput">6.4</div>
+                        <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">
+                            Based on current capacity
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Schedule Buffer</span>
+                            <span class="metric-trend trend-up">
+                                <i class="fas fa-shield-alt"></i> 10.3%
+                            </span>
+                        </div>
+                        <div class="metric-value" id="scheduleBuffer">10.3%</div>
+                        <div style="font-size: 0.875rem; color: var(--gray); margin-top: 0.5rem;">
+                            Extra capacity margin
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gantt Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Production Gantt Chart</h3>
+                        <div class="chart-controls">
+                            <select class="input-field" style="width: auto; padding: 0.5rem;">
+                                <option>Phase View</option>
+                                <option>Weekly View</option>
+                                <option>Resource View</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="gantt-container">
+                        <div id="ganttTimeline" style="min-width: 800px; padding: 1rem;">
+                            <!-- Gantt chart will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Recommendations -->
+                <div class="ai-recommendations">
+                    <div class="ai-header">
+                        <div class="ai-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 0.25rem;">AI Optimization Recommendations</h3>
+                            <p style="color: var(--gray); font-size: 0.9rem;">Based on your inputs and constraints</p>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation-item">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span class="recommendation-badge badge-optimization">Optimization</span>
+                                <strong>Labor Shift Recommendation</strong>
+                            </div>
+                            <p style="color: var(--dark-2);">Switch to 10-hour shifts for 3 weeks during peak demand to increase daily output by 25% without overtime costs.</p>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; white-space: nowrap;">
+                            Apply
+                        </button>
+                    </div>
+                    
+                    <div class="recommendation-item">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span class="recommendation-badge badge-risk">Risk Mitigation</span>
+                                <strong>Buffer Capacity Warning</strong>
+                            </div>
+                            <p style="color: var(--dark-2);">Current buffer is below 15% recommended threshold. Consider adding 2 temporary workers for weeks 6-10.</p>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; white-space: nowrap;">
+                            View Details
+                        </button>
+                    </div>
+                    
+                    <div class="recommendation-item">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items; center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span class="recommendation-badge badge-efficiency">Efficiency</span>
+                                <strong>Production Line Setup</strong>
+                            </div>
+                            <p style="color: var(--dark-2);">Implement parallel workstations for sub-assembly to reduce bottleneck by 2.1 hours per unit.</p>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; white-space: nowrap;">
+                            See Plan
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Export Options -->
+                <div style="background: var(--light); border-radius: var(--border-radius-sm); padding: 1.5rem; margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem; color: var(--dark);">Export Production Plan</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-file-pdf"></i> PDF Report
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-file-excel"></i> Excel Schedule
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-file-csv"></i> CSV Data
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-calendar"></i> iCal Export
+                        </button>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save to Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="prevBtn">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button class="btn btn-primary" id="nextBtn">
+                    Next Step <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn btn-primary" id="analyzeBtn" style="display: none;">
+                    <i class="fas fa-bolt"></i> Run AI Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize ApexCharts
+        let demandChart = null;
+        
+        // Current step tracking
+        let currentStep = 1;
+        
+        // Production data storage
+        const productionData = {
+            projectName: '',
+            productType: 'bathroom_pods',
+            totalUnits: 500,
+            deliveryStart: '2024-07-01',
+            deliveryEnd: '2024-09-30',
+            bufferPercent: 10,
+            hoursPerUnit: 4.5,
+            workersCount: 18,
+            workSchedule: 'single_10',
+            workDaysPerWeek: 5,
+            efficiencyRate: 85,
+            deliveryPattern: 'front_loaded',
+            peakWeek: 60,
+            materialLeadTime: 2,
+            qcTime: 0.5
+        };
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSliders();
+            setupEventListeners();
+            updateCapacityPreview();
+            initializeDemandChart();
+            updateGanttChart();
+        });
+        
+        function initializeSliders() {
+            const sliders = [
+                { slider: 'hoursSlider', input: 'hoursPerUnit', display: 'hoursValue', suffix: ' hours' },
+                { slider: 'workersSlider', input: 'workersCount', display: 'workersValue', suffix: ' workers' },
+                { slider: 'efficiencySlider', input: 'efficiencyRate', display: 'efficiencyValue', suffix: '%' }
+            ];
+            
+            sliders.forEach(config => {
+                const slider = document.getElementById(config.slider);
+                const input = document.getElementById(config.input);
+                const display = document.getElementById(config.display);
+                
+                slider.addEventListener('input', function() {
+                    input.value = this.value;
+                    display.textContent = this.value + config.suffix;
+                    productionData[config.input.replace('Slider', '')] = parseFloat(this.value);
+                    updateCalculations();
+                });
+                
+                input.addEventListener('input', function() {
+                    slider.value = this.value;
+                    display.textContent = this.value + config.suffix;
+                    productionData[config.input] = parseFloat(this.value);
+                    updateCalculations();
+                });
+            });
+        }
+        
+        function setupEventListeners() {
+            // Step navigation
+            document.getElementById('nextBtn').addEventListener('click', nextStep);
+            document.getElementById('prevBtn').addEventListener('click', prevStep);
+            document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+            
+            // Wizard step clicks
+            document.querySelectorAll('.wizard-step').forEach(step => {
+                step.addEventListener('click', function() {
+                    const stepNum = parseInt(this.dataset.step);
+                    goToStep(stepNum);
+                });
+            });
+            
+            // Toggle buttons
+            document.querySelectorAll('.toggle-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('.toggle-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    
+                    // Update production data based on which toggle group
+                    if (this.parentElement.querySelector('.toggle-option[data-buffer]')) {
+                        productionData.bufferPercent = parseInt(this.dataset.buffer);
+                    } else if (this.parentElement.querySelector('.toggle-option[data-days]')) {
+                        productionData.workDaysPerWeek = parseInt(this.dataset.days);
+                    } else if (this.parentElement.querySelector('.toggle-option[data-lead]')) {
+                        productionData.materialLeadTime = parseInt(this.dataset.lead);
+                    }
+                    updateCalculations();
+                });
+            });
+            
+            // Input field updates
+            const inputs = [
+                'projectName', 'productType', 'totalUnits', 'deliveryStart', 
+                'deliveryEnd', 'workSchedule', 'deliveryPattern', 'peakWeek', 'qcTime'
+            ];
+            
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('change', function() {
+                    productionData[id] = this.value;
+                    if (id.includes('Units') || id.includes('peakWeek')) {
+                        productionData[id] = parseInt(this.value);
+                    }
+                    updateCalculations();
+                });
+            });
+            
+            // File upload
+            document.getElementById('fileUpload').addEventListener('change', handleFileUpload);
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const uploadArea = document.getElementById('uploadArea');
+                uploadArea.innerHTML = `
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    <h3>File Uploaded Successfully</h3>
+                    <p>${file.name} (${(file.size / 1024).toFixed(1)} KB)</p>
+                    <p style="color: var(--success); font-size: 0.9rem;">
+                        AI analysis will use historical data for more accurate predictions
+                    </p>
+                `;
+            }
+        }
+        
+        function nextStep() {
+            if (currentStep < 4) {
+                goToStep(currentStep + 1);
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+        
+        function goToStep(step) {
+            // Update UI for current step
+            document.querySelectorAll('.wizard-step').forEach((stepEl, index) => {
+                stepEl.classList.remove('active');
+                if (index + 1 < step) {
+                    stepEl.classList.add('completed');
+                } else if (index + 1 === step) {
+                    stepEl.classList.add('active');
+                }
+            });
+            
+            // Show/hide step content
+            document.querySelectorAll('.wizard-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(`step-${step}`).style.display = 'block';
+            
+            // Update button text
+            const nextBtn = document.getElementById('nextBtn');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const prevBtn = document.getElementById('prevBtn');
+            
+            if (step === 4) {
+                nextBtn.style.display = 'none';
+                analyzeBtn.style.display = 'inline-flex';
+                runAnalysis();
+            } else {
+                nextBtn.style.display = 'inline-flex';
+                analyzeBtn.style.display = 'none';
+            }
+            
+            if (step === 1) {
+                prevBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'inline-flex';
+            }
+            
+            currentStep = step;
+        }
+        
+        function updateCalculations() {
+            updateCapacityPreview();
+            updateDemandChart();
+            updateMetrics();
+        }
+        
+        function updateCapacityPreview() {
+            const capacityPreview = document.getElementById('capacityPreview');
+            if (!capacityPreview) return;
+            
+            // Calculate capacity metrics
+            const hoursPerUnit = productionData.hoursPerUnit;
+            const workers = productionData.workersCount;
+            const efficiency = productionData.efficiencyRate / 100;
+            const workDays = productionData.workDaysPerWeek;
+            
+            // Daily capacity calculation
+            let dailyHours = 8; // Default single shift
+            if (productionData.workSchedule === 'single_10') dailyHours = 10;
+            if (productionData.workSchedule === 'double_16') dailyHours = 16;
+            
+            const dailyManHours = workers * dailyHours * efficiency;
+            const dailyCapacity = dailyManHours / hoursPerUnit;
+            const weeklyCapacity = dailyCapacity * workDays;
+            const monthlyCapacity = weeklyCapacity * 4.33; // Average weeks per month
+            
+            capacityPreview.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${dailyCapacity.toFixed(1)}</div>
+                    <div style="font-size: 0.875rem; color: var(--gray);">Units per Day</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${weeklyCapacity.toFixed(1)}</div>
+                    <div style="font-size: 0.875rem; color: var(--gray);">Units per Week</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${monthlyCapacity.toFixed(0)}</div>
+                    <div style="font-size: 0.875rem; color: var(--gray);">Units per Month</div>
+                </div>
+            `;
+        }
+        
+        function initializeDemandChart() {
+            const options = {
+                series: [{
+                    name: 'Demand',
+                    data: generateDemandData()
+                }, {
+                    name: 'Capacity',
+                    data: generateCapacityData()
+                }],
+                chart: {
+                    height: 300,
+                    type: 'line',
+                    toolbar: {
+                        show: true
+                    }
+                },
+                colors: [var('--danger'), var('--success')],
+                stroke: {
+                    width: [3, 3],
+                    curve: 'smooth'
+                },
+                markers: {
+                    size: 5
+                },
+                xaxis: {
+                    categories: generateWeekLabels(),
+                    title: {
+                        text: 'Weeks'
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Units'
+                    },
+                    min: 0
+                },
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    shared: true,
+                    intersect: false
+                }
+            };
+            
+            demandChart = new ApexCharts(document.querySelector("#demandChart"), options);
+            demandChart.render();
+        }
+        
+        function updateDemandChart() {
+            if (!demandChart) return;
+            
+            demandChart.updateSeries([{
+                name: 'Demand',
+                data: generateDemandData()
+            }, {
+                name: 'Capacity',
+                data: generateCapacityData()
+            }]);
+            
+            demandChart.updateOptions({
+                xaxis: {
+                    categories: generateWeekLabels()
+                }
+            });
+        }
+        
+        function generateDemandData() {
+            const totalWeeks = 13; // Default 13-week timeline
+            const totalUnits = productionData.totalUnits;
+            const pattern = productionData.deliveryPattern;
+            const peakWeek = productionData.peakWeek;
+            
+            let data = [];
+            
+            switch(pattern) {
+                case 'uniform':
+                    const uniformWeekly = totalUnits / totalWeeks;
+                    data = Array(totalWeeks).fill(Math.round(uniformWeekly));
+                    break;
+                    
+                case 'front_loaded':
+                    // More units in first 4 weeks
+                    for (let i = 0; i < totalWeeks; i++) {
+                        if (i < 4) {
+                            data.push(Math.round(peakWeek * 0.8));
+                        } else if (i < 8) {
+                            data.push(Math.round(peakWeek * 0.6));
+                        } else {
+                            data.push(Math.round(peakWeek * 0.4));
+                        }
+                    }
+                    break;
+                    
+                case 'back_loaded':
+                    // Ramp up over time
+                    for (let i = 0; i < totalWeeks; i++) {
+                        data.push(Math.round(peakWeek * (i + 1) / totalWeeks));
+                    }
+                    break;
+                    
+                default:
+                    data = Array(totalWeeks).fill(Math.round(totalUnits / totalWeeks));
+            }
+            
+            // Adjust total to match required units
+            const currentTotal = data.reduce((a, b) => a + b, 0);
+            const adjustment = totalUnits / currentTotal;
+            
+            return data.map(value => Math.round(value * adjustment));
+        }
+        
+        function generateCapacityData() {
+            const totalWeeks = 13;
+            const workDays = productionData.workDaysPerWeek;
+            const dailyCapacity = calculateDailyCapacity();
+            const weeklyCapacity = dailyCapacity * workDays;
+            
+            return Array(totalWeeks).fill(Math.round(weeklyCapacity));
+        }
+        
+        function generateWeekLabels() {
+            const totalWeeks = 13;
+            const labels = [];
+            const startDate = new Date(productionData.deliveryStart);
+            
+            for (let i = 0; i < totalWeeks; i++) {
+                const weekDate = new Date(startDate);
+                weekDate.setDate(startDate.getDate() + (i * 7));
+                labels.push(`Week ${i + 1}\n${(weekDate.getMonth() + 1)}/${weekDate.getDate()}`);
+            }
+            
+            return labels;
+        }
+        
+        function calculateDailyCapacity() {
+            const hoursPerUnit = productionData.hoursPerUnit;
+            const workers = productionData.workersCount;
+            const efficiency = productionData.efficiencyRate / 100;
+            
+            let dailyHours = 8;
+            if (productionData.workSchedule === 'single_10') dailyHours = 10;
+            if (productionData.workSchedule === 'double_16') dailyHours = 16;
+            
+            return (workers * dailyHours * efficiency) / hoursPerUnit;
+        }
+        
+        function updateMetrics() {
+            // Calculate key metrics
+            const totalUnits = productionData.totalUnits;
+            
+            // Calculate timeline in days
+            const start = new Date(productionData.deliveryStart);
+            const end = new Date(productionData.deliveryEnd);
+            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            const workDays = productionData.workDaysPerWeek;
+            const totalWorkDays = Math.floor(totalDays * (workDays / 7));
+            
+            // Required daily output
+            const requiredDaily = totalUnits / totalWorkDays;
+            
+            // Achievable daily output
+            const achievableDaily = calculateDailyCapacity();
+            
+            // Feasibility score
+            let feasibility = 100;
+            if (achievableDaily < requiredDaily) {
+                feasibility = Math.round((achievableDaily / requiredDaily) * 100);
+            }
+            
+            // Schedule buffer
+            const buffer = ((achievableDaily - requiredDaily) / requiredDaily) * 100;
+            
+            // Update UI
+            document.getElementById('feasibilityScore').textContent = feasibility + '%';
+            document.getElementById('dailyOutput').textContent = requiredDaily.toFixed(1);
+            document.getElementById('achievableOutput').textContent = achievableDaily.toFixed(1);
+            document.getElementById('scheduleBuffer').textContent = buffer.toFixed(1) + '%';
+        }
+        
+        function updateGanttChart() {
+            const ganttTimeline = document.getElementById('ganttTimeline');
+            if (!ganttTimeline) return;
+            
+            const phases = [
+                { name: 'Material Procurement', duration: 14, color: '#3b82f6', offset: 0 },
+                { name: 'Frame Fabrication', duration: 28, color: '#8b5cf6', offset: 14 },
+                { name: 'MEP Installation', duration: 21, color: '#10b981', offset: 28 },
+                { name: 'Finishing & QC', duration: 14, color: '#f59e0b', offset: 42 },
+                { name: 'Packaging & Shipping', duration: 7, color: '#ef4444', offset: 49 }
+            ];
+            
+            const totalDays = 56; // 8 weeks
+            const dayWidth = 20; // pixels per day
+            
+            ganttTimeline.innerHTML = `
+                <div style="display: flex; align-items: center; height: 30px; margin-bottom: 10px; border-bottom: 2px solid var(--gray-light);">
+                    ${Array.from({length: Math.ceil(totalDays/7)}).map((_, week) => `
+                        <div style="flex: 1; text-align: center; font-weight: 600; color: var(--dark-2);">
+                            Week ${week + 1}
+                        </div>
+                    `).join('')}
+                </div>
+                ${phases.map(phase => `
+                    <div class="gantt-task" style="width: ${phase.duration * dayWidth}px; margin-left: ${phase.offset * dayWidth}px; background-color: ${phase.color};">
+                        <div class="gantt-task-label">${phase.name} (${phase.duration} days)</div>
+                    </div>
+                `).join('')}
+                <div style="display: flex; justify-content: space-between; margin-top: 20px; padding: 0 10px; color: var(--gray); font-size: 0.875rem;">
+                    <span>Start: ${new Date(productionData.deliveryStart).toLocaleDateString()}</span>
+                    <span>End: ${new Date(productionData.deliveryEnd).toLocaleDateString()}</span>
+                </div>
+            `;
+        }
+        
+        function runAnalysis() {
+            // Show loading state
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const originalHtml = analyzeBtn.innerHTML;
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            analyzeBtn.disabled = true;
+            
+            // Simulate AI processing
+            setTimeout(() => {
+                // Update all calculations
+                updateCalculations();
+                updateGanttChart();
+                
+                // Show success notification
+                showNotification('AI analysis complete! Production plan optimized.', 'success');
+                
+                // Restore button
+                analyzeBtn.innerHTML = originalHtml;
+                analyzeBtn.disabled = false;
+            }, 1500);
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background-color: ${type === 'success' ? '#10b981' : '#3b82f6'};
+                color: white;
+                border-radius: var(--border-radius-sm);
+                box-shadow: var(--shadow-lg);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Helper function to get CSS variable
+        function var(variable) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variable);
+        }
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
